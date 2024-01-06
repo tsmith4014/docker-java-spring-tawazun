@@ -1,17 +1,31 @@
-FROM maven:3.8.6-openjdk-11
+version: "3"
 
-ENV DB_URL=database
-ENV DB_PORT=3306
-ENV DB_NAME=tawazun-db
-ENV DB_USERNAME=admin
-ENV DB_PASSWORD=password123
+services:
+  db:
+    image: "mysql"
+    container_name: tawazun-db
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=tawazun-db
+      - MYSQL_ROOT_PASSWORD=DevOps
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
-WORKDIR /app
+  app:
+    container_name: tawazun-app
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=db
+      - DB_PORT=3306
+      - DB_NAME=tawazun-db
+      - DB_USERNAME=root
+      - DB_PASSWORD=DevOps
+    depends_on:
+      db:
+        condition: service_healthy
 
-COPY . .
-
-RUN mvn package
-
-EXPOSE 8080
-
-ENTRYPOINT [ "java","-jar","target/tawazun.war" ]
